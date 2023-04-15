@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class ProductMapper {
@@ -29,6 +28,6 @@ public class ProductMapper {
     }
 
     public List<ProductResponse> map(Collection<Product> products) {
-        return products.stream().map(this::map).collect(Collectors.toList());
+        return products.stream().map(this::map).toList();
     }
 }

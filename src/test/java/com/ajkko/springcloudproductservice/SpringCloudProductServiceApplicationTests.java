@@ -41,6 +41,7 @@ class SpringCloudProductServiceApplicationTests {
     private static final String CREATE_PRODUCT_NAME = "Create Product";
     private static final String GET_PRODUCTS_PRODUCT_NAME = "Get Products";
     private static final String HEADER_LOCATION = "Location";
+    private static final String PARAM_NAME = "name";
 
     @Autowired
     private MockMvc mockMvc;
@@ -110,8 +111,111 @@ class SpringCloudProductServiceApplicationTests {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Assertions.assertEquals(objectMapper.writeValueAsString(products),
+        Assertions.assertEquals(objectMapper.writeValueAsString(productMapper.map(products)),
                 mvcResult.getResponse().getContentAsString());
+    }
+
+    @Test
+    void shouldGetProductById() throws Exception {
+        int productNumber = 10;
+        List<Product> testProducts = createTestProducts(productNumber, GET_PRODUCTS_PRODUCT_NAME);
+        int middleProductNumber = productNumber / 2;
+        Product testProduct = testProducts.get(middleProductNumber);
+        URI getProductByIdUri = UriComponentsBuilder.fromUriString(URI_TEMPLATE)
+                .pathSegment(testProduct.getId())
+                .build().toUri();
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get(getProductByIdUri)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Assertions.assertEquals(objectMapper.writeValueAsString(productMapper.map(testProduct)),
+                mvcResult.getResponse().getContentAsString());
+    }
+
+    @Test
+    void shouldNotGetProductById() throws Exception {
+        int productNumber = 10;
+        createTestProducts(productNumber, GET_PRODUCTS_PRODUCT_NAME);
+
+        String WRONG_ID = "999";
+
+        URI getProductByWrongIdUri = UriComponentsBuilder.fromUriString(URI_TEMPLATE)
+                .pathSegment(WRONG_ID)
+                .build().toUri();
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get(getProductByWrongIdUri)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        Assertions.assertEquals("",
+                mvcResult.getResponse().getContentAsString());
+    }
+
+    @Test
+    void shouldGetProductByName() throws Exception {
+        int productNumber = 10;
+        List<Product> testProducts = createTestProducts(productNumber, GET_PRODUCTS_PRODUCT_NAME);
+        int middleProductNumber = productNumber / 2;
+        Product testProduct = testProducts.get(middleProductNumber);
+        URI getProductByIdUri = UriComponentsBuilder.fromUriString(URI_TEMPLATE)
+                .queryParam(PARAM_NAME, testProduct.getName())
+                .build().toUri();
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get(getProductByIdUri)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Assertions.assertEquals(objectMapper.writeValueAsString(productMapper.map(testProduct)),
+                mvcResult.getResponse().getContentAsString());
+    }
+
+    @Test
+    void shouldNotGetProductByName() throws Exception {
+        int productNumber = 10;
+        String wrongName = "WRONG_NAME";
+        createTestProducts(productNumber, GET_PRODUCTS_PRODUCT_NAME);
+        URI getProductByIdUri = UriComponentsBuilder.fromUriString(URI_TEMPLATE)
+                .queryParam(PARAM_NAME, wrongName)
+                .build().toUri();
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.get(getProductByIdUri)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Assertions.assertEquals("",
+                mvcResult.getResponse().getContentAsString());
+    }
+
+    @Test
+    void shouldDeleteProductById() throws Exception {
+        int productNumber = 10;
+        List<Product> testProducts = createTestProducts(productNumber, GET_PRODUCTS_PRODUCT_NAME);
+        long initialNumber = productRepository.count();
+        int middleProductNumber = productNumber / 2;
+        Product testProduct = testProducts.get(middleProductNumber);
+
+        URI deleteProductByIdUri = UriComponentsBuilder.fromUriString(URI_TEMPLATE)
+                .pathSegment(testProduct.getId())
+                .build().toUri();
+
+        MvcResult mvcResult = mockMvc.perform(MockMvcRequestBuilders.delete(deleteProductByIdUri)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Assertions.assertEquals(initialNumber - 1,
+                productRepository.count());
+
+        Assertions.assertEquals("",
+                mvcResult.getResponse().getContentAsString());
+
+        Assertions.assertNull(
+                productRepository.findById(testProduct.getId()).orElse(null));
     }
 
     private ProductRequest createProductRequest(String name, BigDecimal price) {
