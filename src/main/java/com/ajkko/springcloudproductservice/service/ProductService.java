@@ -38,6 +38,12 @@ public class ProductService {
                 .orElse(null);
     }
 
+    public ProductResponse getProductByName(String name) {
+        return productRepository.findByName(name)
+                .map(productMapper::map)
+                .orElse(null);
+    }
+
     public void removeProduct(String id) {
         productRepository.deleteById(id);
         log.info("Product {} is removed", id);
