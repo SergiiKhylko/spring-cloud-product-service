@@ -63,6 +63,10 @@ class SpringCloudProductServiceApplicationTests {
         dynamicPropertyRegistry.add("spring.data.mongodb.uri", () -> mongoDBContainer.getReplicaSetUrl());
     }
 
+    static {
+        mongoDBContainer.withReuse(true);
+    }
+
     @AfterEach
     void tearDown() {
         productRepository.deleteAll();
@@ -94,7 +98,7 @@ class SpringCloudProductServiceApplicationTests {
         URI locationUri = UriComponentsBuilder.fromUriString(location).build().toUri();
         Assertions.assertEquals(locationUri.getPath(), URI_TEMPLATE + "/" + createdProductId);
 
-        Product expectedProduct =  productMapper.map(productRequest);
+        Product expectedProduct = productMapper.map(productRequest);
         expectedProduct.setId(createdProductId);
         Assertions.assertEquals(expectedProduct, createdProduct);
         expectedProduct.setDescription(expectedProduct.getDescription() + " ");
