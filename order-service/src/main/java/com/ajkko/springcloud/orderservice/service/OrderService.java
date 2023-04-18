@@ -2,14 +2,19 @@ package com.ajkko.springcloud.orderservice.service;
 
 import com.ajkko.springcloud.orderservice.dto.mapper.OrderMapper;
 import com.ajkko.springcloud.orderservice.dto.request.OrderRequest;
+import com.ajkko.springcloud.orderservice.dto.response.InventoryResponse;
 import com.ajkko.springcloud.orderservice.dto.response.OrderResponse;
 import com.ajkko.springcloud.orderservice.entity.Order;
+import com.ajkko.springcloud.orderservice.entity.OrderLineItem;
 import com.ajkko.springcloud.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriBuilder;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,11 +26,31 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+    private final WebClient.Builder webClientBuilder;
 
     public Long createOrder(OrderRequest order) {
 
         Order createdOrder = orderMapper.map(order);
         createdOrder.setOrderNumber(UUID.randomUUID().toString());
+
+        List<String> skuCodes = createdOrder.getOrderLineItems().stream().map(OrderLineItem::getSkuCode).toList();
+
+        InventoryResponse[] inventories = webClientBuilder.build().get()
+                .uri("http://inventory-service/api/v1/inventories",
+                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build()
+                )
+                .retrieve().bodyToMono(InventoryResponse[].class)
+                .block();
+
+
+
+        boolean allProductsInStock = inventories != null
+                && inventories.length > 0
+                && Arrays.stream(inventories).allMatch(InventoryResponse::isInStock);
+
+        if (!allProductsInStock) {
+            throw new IllegalArgumentException("Product is not in stock, please try again later");
+        }
 
         orderRepository.save(createdOrder);
         log.info("Order {} is saved", createdOrder.getId());
