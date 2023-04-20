@@ -6,9 +6,11 @@ import com.ajkko.springcloud.orderservice.dto.response.InventoryResponse;
 import com.ajkko.springcloud.orderservice.dto.response.OrderResponse;
 import com.ajkko.springcloud.orderservice.entity.Order;
 import com.ajkko.springcloud.orderservice.entity.OrderLineItem;
+import com.ajkko.springcloud.orderservice.event.OrderCreatedEvent;
 import com.ajkko.springcloud.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -27,6 +29,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final WebClient.Builder webClientBuilder;
+    private final KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
 
     public Long createOrder(OrderRequest order) {
 
@@ -53,6 +56,7 @@ public class OrderService {
         }
 
         orderRepository.save(createdOrder);
+        kafkaTemplate.send("notificationTopic", new OrderCreatedEvent(createdOrder.getOrderNumber()));
         log.info("Order {} is saved", createdOrder.getId());
         return createdOrder.getId();
     }

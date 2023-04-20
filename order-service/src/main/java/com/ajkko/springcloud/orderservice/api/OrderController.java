@@ -3,6 +3,8 @@ package com.ajkko.springcloud.orderservice.api;
 import com.ajkko.springcloud.orderservice.dto.request.OrderRequest;
 import com.ajkko.springcloud.orderservice.dto.response.OrderResponse;
 import com.ajkko.springcloud.orderservice.service.OrderService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,8 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
+    @CircuitBreaker(name = "inventory", fallbackMethod = "fallbackMethod")
+    @Retry(name = "inventory")
     public ResponseEntity<Void> createOrder(@RequestBody OrderRequest order) {
         Long id = orderService.createOrder(order);
         URI location = ServletUriComponentsBuilder
@@ -55,5 +59,11 @@ public class OrderController {
     public ResponseEntity<Void> removeProduct(@PathVariable Long id) {
         orderService.removeOrder(id);
         return ResponseEntity.ok().build();
+    }
+
+    public ResponseEntity<String> fallbackMethod(OrderRequest orderRequest, RuntimeException runtimeException) {
+        log.error("fallbackMethod: error happened", runtimeException);
+        return ResponseEntity.badRequest().body("fallbackMethod: error happened\n" +
+                runtimeException.getMessage());
     }
 }
