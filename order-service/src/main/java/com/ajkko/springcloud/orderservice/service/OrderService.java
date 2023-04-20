@@ -6,7 +6,7 @@ import com.ajkko.springcloud.orderservice.dto.response.InventoryResponse;
 import com.ajkko.springcloud.orderservice.dto.response.OrderResponse;
 import com.ajkko.springcloud.orderservice.entity.Order;
 import com.ajkko.springcloud.orderservice.entity.OrderLineItem;
-import com.ajkko.springcloud.orderservice.event.OrderCreatedEvent;
+import com.ajkko.springcloud.event.OrderCreatedEvent;
 import com.ajkko.springcloud.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriBuilder;
 
 import java.util.Arrays;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.ajkko.springcloud.orderservice.event;
+package com.ajkko.springcloud.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
